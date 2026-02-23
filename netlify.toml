@@ -1,0 +1,12 @@
+[build]
+  command = "echo 'No build needed for Python stdlib'"
+  publish = "."
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+# Netlify doesn't directly support Python HTTP servers
+# Options: 
+# 1. Use serverless functions (convert to Flask)
+# 2. Use different host (Railway, Render, PythonAnywhere)
+# 3. Convert to static site
