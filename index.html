@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idea Tracker</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f23; color: #eee; min-height: 100vh; }
+        
+        /* Login Screen */
+        #login-screen { 
+            display: flex; align-items: center; justify-content: center; 
+            min-height: 100vh; background: #0f0f23;
+        }
+        .login-box { 
+            background: #1a1a2e; padding: 40px; border-radius: 12px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4); width: 100%; max-width: 360px; 
+        }
+        .login-box h1 { text-align: center; margin-bottom: 30px; color: #e94560; }
+        .login-box input { 
+            width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #16213e; 
+            border-radius: 8px; background: #0f0f23; color: #eee; font-size: 16px; 
+        }
+        .login-box button { 
+            width: 100%; padding: 14px; background: #e94560; color: white; 
+            border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; 
+        }
+        .login-box button:hover { background: #ff6b6b; }
+        .error { color: #ff6b6b; text-align: center; margin-top: 10px; }
+        .hidden { display: none !important; }
+        
+        /* Main App */
+        #app-screen { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #16213e; 
+        }
+        header h1 { color: #e94560; }
+        .logout-btn { 
+            background: #16213e; color: #eee; padding: 8px 16px; 
+            border: none; border-radius: 6px; cursor: pointer; 
+        }
+        
+        /* Stats */
+        .stats { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+        .stat { 
+            background: #1a1a2e; padding: 15px 25px; border-radius: 8px; 
+            text-align: center; min-width: 100px; 
+        }
+        .stat-num { font-size: 28px; font-weight: bold; color: #e94560; }
+        .stat-label { font-size: 12px; color: #888; }
+        
+        /* Filter */
+        .filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter { 
+            background: #16213e; color: #eee; padding: 8px 16px; 
+            border: none; border-radius: 6px; cursor: pointer; text-decoration: none;
+        }
+        .filter.active { background: #e94560; }
+        
+        /* Ideas */
+        .ideas { display: grid; gap: 20px; }
+        .idea { 
+            background: #1a1a2e; padding: 20px; border-radius: 12px; 
+            border-left: 4px solid #e94560; 
+        }
+        .idea h3 { margin-bottom: 10px; color: #fff; }
+        .idea .problem { color: #ff6b6b; margin-bottom: 10px; }
+        .idea .description { color: #aaa; margin-bottom: 10px; }
+        .idea .solutions { color: #4ade80; font-size: 14px; }
+        .idea .meta { display: flex; gap: 15px; margin: 15px 0; font-size: 13px; color: #666; }
+        .idea .tag { background: #16213e; padding: 3px 10px; border-radius: 4px; }
+        
+        /* Status Buttons */
+        .status-bar { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
+        .status-btn { 
+            padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; 
+            font-size: 12px; opacity: 0.5; transition: opacity 0.2s;
+        }
+        .status-btn:hover, .status-btn.active { opacity: 1; }
+        .status-new { background: #3b82f6; color: white; }
+        .status-interesting { background: #f59e0b; color: white; }
+        .status-validated { background: #10b981; color: white; }
+        .status-reject { background: #ef4444; color: white; }
+        
+        /* Add Form */
+        .add-form { 
+            background: #1a1a2e; padding: 20px; border-radius: 12px; margin-bottom: 30px; 
+        }
+        .add-form h2 { margin-bottom: 15px; }
+        .add-form input, .add-form textarea, .add-form select { 
+            width: 100%; padding: 12px; margin-bottom: 10px; 
+            border: 2px solid #16213e; border-radius: 8px; 
+            background: #0f0f23; color: #eee; font-size: 14px; 
+        }
+        .add-form button { 
+            background: #e94560; color: white; padding: 12px 24px; 
+            border: none; border-radius: 8px; cursor: pointer; 
+        }
+        
+        @media (max-width: 600px) {
+            .stats { justify-content: center; }
+            .filters { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h1>🔐 Idea Tracker</h1>
+            <form id="login-form">
+                <input type="password" id="password" placeholder="Passwort eingeben" required>
+                <button type="submit">Login</button>
+            </form>
+            <p class="error hidden" id="login-error">Falsches Passwort</p>
+        </div>
+    </div>
+    
+    <!-- Main App -->
+    <div id="app-screen" class="hidden">
+        <header>
+            <h1>💡 Idea Tracker</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </header>
+        
+        <div class="stats">
+            <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
+            <div class="stat"><div class="stat-num" id="stat-new">0</div><div class="stat-label">Neu</div></div>
+            <div class="stat"><div class="stat-num" id="stat-interesting">0</div><div class="stat-label">Interessant</div></div>
+            <div class="stat"><div class="stat-num" id="stat-validated">0</div><div class="stat-label">Validiert</div></div>
+            <div class="stat"><div class="stat-num" id="stat-rejected">0</div><div class="stat-label">Verworfen</div></div>
+        </div>
+        
+        <div class="filters">
+            <a href="#" class="filter active" data-filter="">Alle</a>
+            <a href="#" class="filter" data-filter="new">Neu</a>
+            <a href="#" class="filter" data-filter="interesting">Interessant</a>
+            <a href="#" class="filter" data-filter="validated">Validiert</a>
+            <a href="#" class="filter" data-filter="reject">Verworfen</a>
+        </div>
+        
+        <div class="add-form">
+            <h2>➕ Neue Idee</h2>
+            <form id="add-form">
+                <input type="text" id="idea-title" placeholder="Titel" required>
+                <input type="text" id="idea-problem" placeholder="Problem" required>
+                <textarea id="idea-description" placeholder="Beschreibung (optional)" rows="2"></textarea>
+                <input type="text" id="idea-solutions" placeholder="Bestehende Lösungen (optional)">
+                <input type="text" id="idea-source" placeholder="Quelle (z.B. Research)" required>
+                <select id="idea-category">
+                    <option value="productivity">Productivity</option>
+                    <option value="developer">Developer</option>
+                    <option value="business">Business</option>
+                    <option value="ai_ml">AI/ML</option>
+                    <option value="communication">Communication</option>
+                    <option value="security">Security</option>
+                </select>
+                <button type="submit">Idee hinzufügen</button>
+            </form>
+        </div>
+        
+        <div class="ideas" id="ideas-container"></div>
+    </div>
+
+    <script>
+        // Config
+        const PASSWORD = 'alfred2026';
+        const API_URL = 'https://idea-tracker-db.adaptiveplayer.io'; // We'll set up a simple API
+        
+        // Simple storage for ideas (in-memory, will reset on reload)
+        // For persistence, we'd need a backend API
+        let ideas = JSON.parse(localStorage.getItem('ideas')) || [];
+        let currentFilter = '';
+        
+        // Check if already logged in
+        if (localStorage.getItem('logged_in') === 'true') {
+            showApp();
+        }
+        
+        // Login form
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            if (password === PASSWORD) {
+                localStorage.setItem('logged_in', 'true');
+                showApp();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        });
+        
+        function logout() {
+            localStorage.removeItem('logged_in');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('app-screen').classList.add('hidden');
+        }
+        
+        function showApp() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            renderIdeas();
+            updateStats();
+        }
+        
+        // Add idea form
+        document.getElementById('add-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newIdea = {
+                id: Date.now(),
+                title: document.getElementById('idea-title').value,
+                problem: document.getElementById('idea-problem').value,
+                description: document.getElementById('idea-description').value,
+                existing_solutions: document.getElementById('idea-solutions').value,
+                source: document.getElementById('idea-source').value,
+                category: document.getElementById('idea-category').value,
+                status: 'new',
+                created_at: new Date().toISOString()
+            };
+            ideas.unshift(newIdea);
+            localStorage.setItem('ideas', JSON.stringify(ideas));
+            renderIdeas();
+            updateStats();
+            document.getElementById('add-form').reset();
+        });
+        
+        // Filter clicks
+        document.querySelectorAll('.filter').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.filter').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderIdeas();
+            });
+        });
+        
+        function renderIdeas() {
+            const container = document.getElementById('ideas-container');
+            let filtered = currentFilter ? ideas.filter(i => i.status === currentFilter) : ideas;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#666;padding:40px;">Noch keine Ideen vorhanden</p>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(idea => `
+                <div class="idea">
+                    <h3>${idea.title}</h3>
+                    <p class="problem">Problem: ${idea.problem}</p>
+                    ${idea.description ? `<p class="description">${idea.description}</p>` : ''}
+                    ${idea.existing_solutions ? `<p class="solutions">⬡ ${idea.existing_solutions}</p>` : ''}
+                    <div class="meta">
+                        <span>📅 ${new Date(idea.created_at).toLocaleDateString('de-DE')}</span>
+                        ${idea.source ? `<span>📌 ${idea.source}</span>` : ''}
+                        ${idea.category ? `<span class="tag">${idea.category}</span>` : ''}
+                    </div>
+                    <div class="status-bar">
+                        <button class="status-btn status-new ${idea.status === 'new' ? 'active' : ''}" 
+                            onclick="setStatus(${idea.id}, 'new')">Neu</button>
+                        <button class="status-btn status-interesting ${idea.status === 'interesting' ? 'active' : ''}" 
+                            onclick="setStatus(${idea.id}, 'interesting')">Interessant</button>
+                        <button class="status-btn status-validated ${idea.status === 'validated' ? 'active' : ''}" 
+                            onclick="setStatus(${idea.id}, 'validated')">Validiert</button>
+                        <button class="status-btn status-reject ${idea.status === 'reject' ? 'active' : ''}" 
+                            onclick="setStatus(${idea.id}, 'reject')">Verwerfen</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function setStatus(id, status) {
+            const idea = ideas.find(i => i.id === id);
+            if (idea) {
+                idea.status = status;
+                localStorage.setItem('ideas', JSON.stringify(ideas));
+                renderIdeas();
+                updateStats();
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-total').textContent = ideas.length;
+            document.getElementById('stat-new').textContent = ideas.filter(i => i.status === 'new').length;
+            document.getElementById('stat-interesting').textContent = ideas.filter(i => i.status === 'interesting').length;
+            document.getElementById('stat-validated').textContent = ideas.filter(i => i.status === 'validated').length;
+            document.getElementById('stat-rejected').textContent = ideas.filter(i => i.status === 'reject').length;
+        }
+    </script>
+</body>
+</html>
