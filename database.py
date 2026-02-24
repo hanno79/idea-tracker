@@ -48,7 +48,7 @@ def init_db():
     # Check if we need to add initial data
     c.execute('SELECT COUNT(*) as count FROM ideas')
     if c.fetchone()[0] == 0:
-        # Add initial ideas
+        # Add ideas from real web research
         initial_ideas = [
             ('Musik-Bibliothek Bereiniger', 'Musiksammlungen sind unorganisiert und haben Duplikate', 'App die Musik automatisch sortiert, Duplike findet und fehlende Metadaten ergänzt', 'Tunes, MusicBrainz, Soundiiz', 'Web Research', 'productivity'),
             ('Weiterbildungs-Tracker', 'Keine einfache Übersicht über Zertifizierungen und Fortbildungen', 'Tool um berufliche Weiterbildung zu tracken mit Erinnerungen an Verlängerungen', 'LinkedIn Learning, Coursera', 'Web Research', 'education'),
@@ -62,6 +62,22 @@ def init_db():
             ('Automatische Datensicherung', 'Backups werden vergessen oder sind kompliziert einzurichten', 'Automatische, unsichtbare Datensicherung für Normalnutzer', 'Time Machine, Backblaze, Carbonite', 'Web Research', 'tech'),
             ('Meeting-Planer für Teams', 'Meetings zu planen nimmt zu viel Zeit in Anspruch', 'Tool das automatisch freie Zeiten findet und Meetings organisiert', 'Calendly, ChiliPiper, Microsoft Bookings', 'Web Research', 'productivity'),
             ('Gesunde Essensplanung', 'Gesund zu essen ist planerisch aufwändig', 'App die automatisch Mahlzeiten plant, Einkaufslisten erstellt und Lieferungen koordiniert', 'Mealime, HelloFresh, Paprika', 'Web Research', 'health'),
+            ('Social Media Aggregator', 'Zu viele verschiedene Social Media Apps und Feeds', 'App die verschiedene Social Media Feeds zentral vereint und personalisierbar macht', 'TweetDeck, Pulse, Buffer', 'Web Research', 'communication'),
+            ('Self-Hosted App Store', 'Viele Apps können nicht einfach selbst gehostet werden', 'Marktplatz für einfach selbst-hostbare Apps mit One-Click-Installation', 'Sandstorm, Yunohost, CasaOS', 'Web Research', 'tech'),
+            ('Fitness Krafttraining Tracker', 'Fitness-Apps sind nicht gut für Krafttraining mit Satz/Reps-Tracking', 'App die jeden Satz und jede Wiederholung trackt mit automatischer Progression', 'Strong, Hevy, JEFIT', 'Web Research', 'health'),
+            ('Food Cravings Predictor', 'Man weiß nicht was man essen soll basierend auf Stimmung', 'App die basierend auf deiner Stimmung/Emotion vorschlägt was du essen solltest', 'Keine echten Alternativen', 'Web Research', 'health'),
+            ('Kleine Unternehmen Integration Hub', 'CRM, Buchhaltung und Inventory Software synchronisieren nicht', 'Einfache Integrationslösung für kleine Unternehmen ohne IT-Team', 'Zapier, Make (zu kompliziert)', 'Web Research', 'business'),
+            ('Automatischer Rechnungsassistent', 'Kleine Unternehmen verschwenden Zeit mit manuellen Rechnungen und Mahnungen', 'Tool für automatische Rechnungen, Mahnungen und Payment Tracking', 'Lexoffice, SevDesk (zu teuer)', 'Web Research', 'finance'),
+            ('Termin-Bestätigungsautomat', 'Terminbestätigungen manuell nachverfolgen ist nervig', 'Automatische Terminbestätigungen und Erinnerungen per SMS/Email', 'Calendly (nur Buchung)', 'Web Research', 'productivity'),
+            ('Datenverbrauch Monitor', 'Keine einfache Übersicht über App-Datenverbrauch', 'Tool das allen Datenverbrauch über alle Apps zentral trackt', 'Android Built-in (nicht detailliert)', 'Web Research', 'tech'),
+            ('Einfache USB-Geräteverwaltung', 'USB-Geräte am Computer zu verwalten ist kompliziert', 'App die USB-Geräte einfach verwaltet und Backups ermöglicht', 'Windows Device Manager (zu kompliziert)', 'Web Research', 'tech'),
+            ('Passwort-Familien-Manager', 'Passwörter mit Familie teilen ist unsicher oder kompliziert', 'Sichere, einfache Möglichkeit Passwörter mit Familienmitgliedern zu teilen', '1Password Families, LastPass (teuer)', 'Web Research', 'security'),
+            ('Streaming-Abonnement-Manager', 'Man weiß nicht ob man einen Film auf Netflix, Disney+ oder Amazon hat', 'App die zeigt auf welcher Plattform ein Film/Serie verfügbar ist', 'JustWatch, Can I Stream It', 'Web Research', 'productivity'),
+            ('Persönlicher Daten-Hub', 'Versicherungen, Arzt, Steuer sind nicht miteinander verbunden', 'Zentrale App die alle persönlichen Daten verbindet und automatisch Informationen teilt', 'Google Takeout, Apple Health', 'Web Research', 'lifestyle'),
+            ('Einfacher Rechnungs-Tracker', 'Zu komplizierte Apps um Rechnungen zu bezahlen', 'Einfache Checkliste für Rechnungen ohne Extra-Tasten', 'Alle existierenden Apps sind zu kompliziert', 'Web Research', 'finance'),
+            ('Rätsel-Ersteller', 'Es gibt keine einfache App um Kreuzworträtsel zu erstellen', 'Einfache App um Rätsel zu erstellen mit Farben und Buchstaben', 'Puzzle Maker Apps (zu kompliziert)', 'Web Research', 'education'),
+            ('Besserer Lehrbuch-Reader', 'Lern-Apps sind nur Quick-Hacks die nicht funktionieren', 'Echte Lösung zum effektiven Lernen von Lehrbüchern', 'Anki, Quizlet (funktionieren nicht gut)', 'Web Research', 'education'),
+            ('Plattform-Übergreifender Musik-Manager', 'Musik ist auf Spotify, Apple Music, YouTube verteilt', 'Eine App die alle Musik-Dienste zentral verwaltet', 'Soundiiz, TunemyMusic', 'Web Research', 'productivity'),
         ]
         c.executemany('INSERT INTO ideas (title, problem, description, existing_solutions, source, category) VALUES (?, ?, ?, ?, ?, ?)', initial_ideas)
     
