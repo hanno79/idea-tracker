@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Idea Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; padding: 20px; }
@@ -20,9 +21,12 @@
         .login-box button:hover { background: #0056b3; }
         .login-error { color: red; text-align: center; margin-top: 10px; display: none; }
         
+        /* Loading */
+        #loading { text-align: center; padding: 40px; color: #666; }
+        
         /* App */
-        #app-screen { display: block; }
-        #app-screen.hidden { display: none; }
+        #app-screen { display: none; }
+        #app-screen.active { display: block; }
         
         .stats { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
         .stat { background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 100px; }
@@ -76,6 +80,9 @@
     </style>
 </head>
 <body>
+    <!-- Loading -->
+    <div id="loading">Lade Datenbank...</div>
+    
     <!-- Login Screen -->
     <div id="login-screen" class="active">
         <div class="login-box">
@@ -89,7 +96,7 @@
     </div>
     
     <!-- Main App -->
-    <div id="app-screen" class="hidden">
+    <div id="app-screen">
         <div class="container">
             <div class="header-row">
                 <h1>💡 Idea Tracker</h1>
@@ -162,33 +169,92 @@
     </div>
 
     <script>
-        // Password
         const PASSWORD = 'alfred2026';
-        
-        // Pre-loaded ideas from original database
-        const initialIdeas = [
-            {"id":1,"title":"Automatischer Notizen-Organisierer","problem":"Notizen werden verteilt gespeichert und sind schwer wiederzufinden","description":"Tool das automatisch Notizen aus verschiedenen Quellen zusammenfasst und kategorisiert","existing_solutions":"Notion, Evernote, Apple Notes","source":"Research","category":"productivity","status":"new","created_at":"2026-02-23 19:27:33"},
-            {"id":2,"title":"Meeting-Protokoll AI","problem":"Nach Meetings geht viel Information verloren, Follow-ups werden vergessen","description":"Automatisches Erstellen von Meeting-Notes, Action-Items und Follow-up Erinnerungen","existing_solutions":"Otter.ai, Fireflies","source":"Research","category":"business","status":"new","created_at":"2026-02-23 19:27:33"},
-            {"id":3,"title":"Cross-Platform Datei-Sync mit Smart-Features","problem":"Dateien liegen auf verschiedenen Cloud-Diensten und sind nicht automatisch synchronisiert","description":"Ein Tool das verschiedene Cloud-Dienste verbindet und automatisch Dateien organisiert","existing_solutions":"Dropbox, Google Drive, OneDrive","source":"Research","category":"productivity","status":"new","created_at":"2026-02-23 19:27:33"},
-            {"id":4,"title":"Einfache Business-Intelligence für Nicht-Techniker","problem":"BI-Tools sind zu kompliziert für kleine Unternehmen","description":"Einsteigerfreundliches Dashboard-Tool das Daten aus verschiedenen Quellen visualisiert","existing_solutions":"Tableau, PowerBI","source":"Research","category":"business","status":"new","created_at":"2026-02-23 19:27:33"},
-            {"id":5,"title":"Passwort-Manager mit Familien-Team-Features","problem":"Bestehende Passwort-Manager sind zu teuer oder haben keine guten Team-Features","description":"Erschwinglicher Passwort-Manager mit einfacher Team-Freigabe","existing_solutions":"1Password, Bitwarden, LastPass","source":"Research","category":"tech","status":"new","created_at":"2026-02-23 19:27:33"},
-            {"id":6,"title":"KI-Agent Orchestrierung für KMUs","problem":"Kleine Unternehmen können sich keine teuren Enterprise-Lösungen für KI-Automatisierung leisten","description":"Eine Plattform die es Nicht-Technikern erlaubt, KI-Agenten für wiederkehrende Geschäftsprozesse zu erstellen und zu verknüpfen","existing_solutions":"Zapier, Make.com, Microsoft Copilot Studio","source":"Research","category":"ai_ml","status":"new","created_at":"2026-02-23 21:02:29"},
-            {"id":7,"title":"Meeting-Intelligence für kleine Teams","problem":"Teure Enterprise-Tools für Meeting-Analyse sind für kleine Teams nicht erschwinglich","description":"Einsteigerfreundliches Tool für Meeting-Transkription, Zusammenfassung und Action-Items","existing_solutions":"Otter.ai, Fireflies, Gong","source":"Research","category":"communication","status":"new","created_at":"2026-02-23 21:02:29"},
-            {"id":8,"title":"Developer Documentation Generator","problem":"Dokumentation wird nach Entwicklung oft vergessen oder ist veraltet","description":"Automatisches Erstellen und Aktualisieren von API-Dokumentation aus Code-Kommentaren","existing_solutions":"Swagger, JSDoc, Docusaurus","source":"Research","category":"developer","status":"new","created_at":"2026-02-23 21:02:29"},
-            {"id":9,"title":"Einfache BI für Nicht-Techniker","problem":"BI-Tools erfordern technisches Wissen und sind für kleine Unternehmen überdimensioniert","description":"Einsteigerfreundliches Dashboard-Tool das Daten aus verschiedenen Quellen ohne SQL visualisiert","existing_solutions":"Tableau, PowerBI, Google Data Studio","source":"Research","category":"business","status":"new","created_at":"2026-02-23 21:02:29"},
-            {"id":10,"title":"API-Monitoring für Entwickler","problem":"Existierende API-Monitoring-Tools sind entweder zu einfach oder zu komplex/teuer","description":"Mid-tier API Monitoring mit guter Preis-Leistung für Indie-Developer und kleine Teams","existing_solutions":"Postman, Datadog, New Relic","source":"Research","category":"developer","status":"new","created_at":"2026-02-23 21:02:29"},
-            {"id":11,"title":"Passwort-Manager mit einfacher Team-Freigabe","problem":"Bestehende Passwort-Manager sind zu teuer oder haben komplizierte Team-Features","description":"Erschwinglicher Passwort-Manager mit einfacher, sicherer Team-Freigabe ohne Enterprise-Komplexität","existing_solutions":"1Password Teams, Bitwarden, LastPass","source":"Research","category":"security","status":"new","created_at":"2026-02-23 21:02:29"},
-            {"id":12,"title":"Local-First Collaboration Tools","problem":"Bestehende Kollaborationstools sind abhängig von Cloud-Verbindung","description":"Offline-fähige Kollaborationstools die lokal arbeiten aber trotzdem synchronisieren","existing_solutions":"","source":"Research","category":"productivity","status":"new","created_at":"2026-02-23 21:02:29"},
-            {"id":13,"title":"SaaS-Billing für deutsche Unternehmen","problem":"Internationale Billing-Tools integrieren schlecht mit deutschen Anforderungen (SEPA, GoBD)","description":"Billing-Plattform speziell für deutsche/Mitteleuropäische SaaS-Unternehmen mit lokaler Compliance","existing_solutions":"Stripe, Chargebee, Paddle","source":"Research","category":"business","status":"new","created_at":"2026-02-23 21:02:29"}
-        ];
-        
-        // Load ideas from localStorage or use initial data
-        let ideas = JSON.parse(localStorage.getItem('ideas')) || initialIdeas;
+        let db = null;
         let currentFilter = '';
         
-        // Check if already logged in
-        if (localStorage.getItem('logged_in') === 'true') {
-            showApp();
+        // Initialize SQLite database
+        async function initDB() {
+            const SQL = await initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+            });
+            
+            // Try to load existing database from localStorage
+            const savedDb = localStorage.getItem('idea_tracker_db');
+            if (savedDb) {
+                const data = Uint8Array.from(atob(savedDb), c => c.charCodeAt(0));
+                db = new SQL.Database(data);
+            } else {
+                // Create new database with initial data
+                db = new SQL.Database();
+                db.run(`
+                    CREATE TABLE ideas (
+                        id INTEGER PRIMARY KEY,
+                        title TEXT,
+                        problem TEXT,
+                        description TEXT,
+                        existing_solutions TEXT,
+                        source TEXT,
+                        category TEXT,
+                        status TEXT DEFAULT 'new',
+                        created_at TEXT
+                    )
+                `);
+                
+                // Insert initial data
+                const initialData = [
+                    ['Automatischer Notizen-Organisierer', 'Notizen werden verteilt gespeichert und sind schwer wiederzufinden', 'Tool das automatisch Notizen aus verschiedenen Quellen zusammenfasst und kategorisiert', 'Notion, Evernote, Apple Notes', 'Research', 'productivity', 'new', '2026-02-23 19:27:33'],
+                    ['Meeting-Protokoll AI', 'Nach Meetings geht viel Information verloren, Follow-ups werden vergessen', 'Automatisches Erstellen von Meeting-Notes, Action-Items und Follow-up Erinnerungen', 'Otter.ai, Fireflies', 'Research', 'business', 'new', '2026-02-23 19:27:33'],
+                    ['Cross-Platform Datei-Sync', 'Dateien liegen auf verschiedenen Cloud-Diensten und sind nicht automatisch synchronisiert', 'Ein Tool das verschiedene Cloud-Dienste verbindet und automatisch Dateien organisiert', 'Dropbox, Google Drive, OneDrive', 'Research', 'productivity', 'new', '2026-02-23 19:27:33'],
+                    ['Einfache Business-Intelligence', 'BI-Tools sind zu kompliziert für kleine Unternehmen', 'Einsteigerfreundliches Dashboard-Tool das Daten aus verschiedenen Quellen visualisiert', 'Tableau, PowerBI', 'Research', 'business', 'new', '2026-02-23 19:27:33'],
+                    ['Passwort-Manager Team-Features', 'Bestehende Passwort-Manager sind zu teuer oder haben keine guten Team-Features', 'Erschwinglicher Passwort-Manager mit einfacher Team-Freigabe', '1Password, Bitwarden, LastPass', 'Research', 'tech', 'new', '2026-02-23 19:27:33'],
+                    ['KI-Agent Orchestrierung für KMUs', 'Kleine Unternehmen können sich keine teuren Enterprise-Lösungen für KI-Automatisierung leisten', 'Eine Plattform die es Nicht-Technikern erlaubt, KI-Agenten für wiederkehrende Geschäftsprozesse zu erstellen', 'Zapier, Make.com, Microsoft Copilot Studio', 'Research', 'ai_ml', 'new', '2026-02-23 21:02:29'],
+                    ['Meeting-Intelligence', 'Teure Enterprise-Tools für Meeting-Analyse sind für kleine Teams nicht erschwinglich', 'Einsteigerfreundliches Tool für Meeting-Transkription und Zusammenfassung', 'Otter.ai, Fireflies, Gong', 'Research', 'communication', 'new', '2026-02-23 21:02:29'],
+                    ['Developer Documentation Generator', 'Dokumentation wird nach Entwicklung oft vergessen oder ist veraltet', 'Automatisches Erstellen von API-Dokumentation aus Code-Kommentaren', 'Swagger, JSDoc, Docusaurus', 'Research', 'developer', 'new', '2026-02-23 21:02:29'],
+                    ['API-Monitoring für Entwickler', 'Existierende API-Monitoring-Tools sind entweder zu einfach oder zu komplex/teuer', 'Mid-tier API Monitoring mit guter Preis-Leistung für Indie-Developer', 'Postman, Datadog, New Relic', 'Research', 'developer', 'new', '2026-02-23 21:02:29'],
+                    ['Local-First Collaboration', 'Bestehende Kollaborationstools sind abhängig von Cloud-Verbindung', 'Offline-fähige Kollaborationstools die lokal arbeiten aber synchronisieren', '', 'Research', 'productivity', 'new', '2026-02-23 21:02:29'],
+                    ['SaaS-Billing für deutsche Unternehmen', 'Internationale Billing-Tools integrieren schlecht mit deutschen Anforderungen', 'Billing-Plattform speziell für deutsche SaaS-Unternehmen mit lokaler Compliance', 'Stripe, Chargebee, Paddle', 'Research', 'business', 'new', '2026-02-23 21:02:29']
+                ];
+                
+                const stmt = db.prepare('INSERT INTO ideas (title, problem, description, existing_solutions, source, category, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+                initialData.forEach(row => stmt.run(row));
+                stmt.free();
+                saveDb();
+            }
+            
+            // Show app
+            document.getElementById('loading').style.display = 'none';
+            if (localStorage.getItem('logged_in') === 'true') {
+                showApp();
+            }
+        }
+        
+        function saveDb() {
+            const data = db.export();
+            const base64 = btoa(String.fromCharCode.apply(null, data));
+            localStorage.setItem('idea_tracker_db', base64);
+        }
+        
+        function getIdeas() {
+            const results = [];
+            const stmt = db.prepare('SELECT * FROM ideas ORDER BY id DESC');
+            while (stmt.step()) {
+                results.push(stmt.getAsObject());
+            }
+            stmt.free();
+            return results;
+        }
+        
+        function addIdea(title, problem, description, existing_solutions, source, category) {
+            const created_at = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            db.run('INSERT INTO ideas (title, problem, description, existing_solutions, source, category, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [title, problem, description, existing_solutions, source, category || 'other', 'new', created_at]);
+            saveDb();
+        }
+        
+        function updateStatus(id, status) {
+            db.run('UPDATE ideas SET status = ? WHERE id = ?', [status, id]);
+            saveDb();
         }
         
         // Login
@@ -206,12 +272,12 @@
         function logout() {
             localStorage.removeItem('logged_in');
             document.getElementById('login-screen').classList.add('active');
-            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('active');
         }
         
         function showApp() {
             document.getElementById('login-screen').classList.remove('active');
-            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('app-screen').classList.add('active');
             renderIdeas();
             updateStats();
         }
@@ -219,19 +285,14 @@
         // Add idea
         document.getElementById('add-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            const newIdea = {
-                id: Date.now(),
-                title: document.getElementById('idea-title').value,
-                problem: document.getElementById('idea-problem').value,
-                description: document.getElementById('idea-description')?.value || '',
-                existing_solutions: document.getElementById('idea-solutions').value,
-                source: document.getElementById('idea-source').value,
-                category: document.getElementById('idea-category').value || 'other',
-                status: 'new',
-                created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
-            };
-            ideas.unshift(newIdea);
-            localStorage.setItem('ideas', JSON.stringify(ideas));
+            addIdea(
+                document.getElementById('idea-title').value,
+                document.getElementById('idea-problem').value,
+                document.getElementById('idea-description')?.value || '',
+                document.getElementById('idea-solutions').value,
+                document.getElementById('idea-source').value,
+                document.getElementById('idea-category').value
+            );
             renderIdeas();
             updateStats();
             document.getElementById('add-form').reset();
@@ -250,6 +311,7 @@
         
         function renderIdeas() {
             const container = document.getElementById('ideas-container');
+            let ideas = getIdeas();
             let filtered = currentFilter ? ideas.filter(i => i.status === currentFilter) : ideas;
             
             if (filtered.length === 0) {
@@ -284,22 +346,22 @@
         }
         
         function setStatus(id, status) {
-            const idea = ideas.find(i => i.id === id);
-            if (idea) {
-                idea.status = status;
-                localStorage.setItem('ideas', JSON.stringify(ideas));
-                renderIdeas();
-                updateStats();
-            }
+            updateStatus(id, status);
+            renderIdeas();
+            updateStats();
         }
         
         function updateStats() {
+            const ideas = getIdeas();
             document.getElementById('stat-total').textContent = ideas.length;
             document.getElementById('stat-new').textContent = ideas.filter(i => i.status === 'new').length;
             document.getElementById('stat-interesting').textContent = ideas.filter(i => i.status === 'interesting').length;
             document.getElementById('stat-validated').textContent = ideas.filter(i => i.status === 'validated').length;
             document.getElementById('stat-rejected').textContent = ideas.filter(i => i.status === 'reject').length;
         }
+        
+        // Start
+        initDB();
     </script>
 </body>
 </html>
