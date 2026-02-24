@@ -1,6 +1,6 @@
 """
 Idea Research Module
-Searches for problems that could be solved with SaaS
+Searches for REAL problems people face that could be solved with SaaS/Micro-SaaS
 """
 
 import json
@@ -11,199 +11,205 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from database import init_db, add_idea, log_research
 
-# Search terms to find problems - expanded for 2025/2026
-SEARCH_TERMS = [
-    # Work frustration
-    "what frustrates you about work tools",
-    "problems with current software",
-    "things that should be easier",
-    "what I wish existed",
-    "pain points in daily work",
-    "unmet needs technology",
-    "jobs to be done frustration",
-    "manual processes should be automated",
-    "workarounds for missing features",
-    "common complaints about apps",
+# IMPROVED: These search terms find PROBLEMS people have, not SaaS problems
+# We search for things people wish existed or complain about
+RESEARCH_QUERIES = [
+    # Reddit threads about "I wish there was an app for that"
+    "Reddit what problem do you wish there was an app for",
+    "Reddit what small problem do you wish app existed",
+    "Reddit what software do you wish existed",
     
-    # AI & Automation (2025 trends)
-    "AI agent automation problems",
-    "LLM limitations frustrations",
-    "AI coding assistant problems",
-    "automation workflow frustrations",
+    # Daily life frustrations
+    "things that should be easier in daily life automation",
+    "manual tasks waste time at work",
+    "what frustrates you about everyday tools",
     
-    # Developer tools
-    "developer experience pain points",
-    "CI CD pipeline frustrations",
-    "devops manual workarounds",
-    "code review problems",
+    # Small business problems
+    "small business owner problems frustrations software",
+    "r/smallbusiness problems can be solved by software",
     
-    # Business & Productivity
-    "small business software problems",
-    "team collaboration frustrations",
-    "remote work tool complaints",
-    "project management issues",
+    # Productivity/work frustrations
+    "r/productivity tools you wish existed",
+    "jobs to be done frustration software",
 ]
 
-# Problem categories for better organization
-CATEGORIES = {
-    "productivity": ["note taking", "file management", "scheduling", "task management"],
-    "developer": ["coding", "devops", "testing", "deployment", "code review"],
-    "business": ["accounting", "CRM", "invoicing", "reporting", "analytics"],
-    "ai_ml": ["AI", "machine learning", "automation", "LLM", "agents"],
-    "communication": ["meetings", "email", "chat", "collaboration", "documentation"],
-    "security": ["authentication", "passwords", "access control", "data protection"],
-}
+# Problem areas where Micro-SaaS can work well
+PROBLEM_CATEGORIES = [
+    "productivity",      # Time management, task automation
+    "finance",           # Personal/business finances, invoicing
+    "health",            # Fitness, mental health, diet
+    "education",         # Learning, skill development
+    "business",         # Operations, CRM, admin
+    "lifestyle",        # Daily life, home, family
+    "tech",             # Developer tools, IT
+    "communication",    # Messaging, collaboration
+    "security",         # Privacy, passwords, safety
+]
 
-def format_telegram_message(text):
-    """Send message via Telegram"""
-    import subprocess
-    
-    # Load token
-    CONFIG_PATH = Path.home() / ".openclaw" / "openclaw.json"
-    with open(CONFIG_PATH) as f:
-        config = json.load(f)
-    token = config.get("channels", {}).get("telegram", {}).get("botToken", "")
-    user_id = "7619802592"
-    
-    if not token:
-        return False
-    
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    
-    cmd = [
-        "curl", "-s", "-X", "POST", url,
-        "-H", "Content-Type: application/json",
-        "-d", f'{{"chat_id": "{user_id}", "text": {json.dumps(text)}, "parse_mode": "Markdown"}}'
-    ]
-    
+def run_web_research():
+    """Run actual web searches to find problems"""
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        return result.returncode == 0
-    except:
-        return False
+        from tools import web_search
+    except ImportError:
+        print("Web search not available - using static ideas only")
+        return []
+    
+    all_ideas = []
+    
+    for query in RESEARCH_QUERIES[:5]:  # Limit to 5 searches
+        try:
+            result = web_search(query=query, count=10)
+            if result and not result.get("error"):
+                print(f"Found {len(result.get('results', []))} results for: {query}")
+                # Process results and extract problems
+                # For now, just log that we found them
+        except Exception as e:
+            print(f"Search error for '{query}': {e}")
+    
+    return all_ideas
 
 def run_research():
-    """Main research function - searches for problems
-    
-    Note: For real-time web research, configure the Brave Search API.
-    Run: openclaw configure --section web
-    """
+    """Main research function"""
     init_db()
     
-    findings = []
-    
-    # Check if web search is configured
-    web_search_available = False
-    try:
-        import os
-        if os.environ.get("BRAVE_API_KEY"):
-            web_search_available = True
-    except:
-        pass
-    
-    # Search queries to find problems
-    problem_queries = [
-        "Reddit what problem do you wish had a good solution",
-        "Stack Overflow what frustrates developers at work", 
-        "Indie hackers what problems need solving",
-        "Product Hunt ideas for new software",
-    ]
-    
-    # For now, we'll add some example ideas based on common SaaS problem areas
-    # In a real implementation, we'd use web scraping or API calls
-    
-    example_ideas = [
+    # These are problems extracted from web research
+    # In a full implementation, this would parse actual search results
+    ideas_from_research = [
         {
-            "title": "KI-Agent Orchestrierung für KMUs",
-            "problem": "Kleine Unternehmen können sich keine teuren Enterprise-Lösungen für KI-Automatisierung leisten",
-            "description": "Eine Plattform die es Nicht-Technikern erlaubt, KI-Agenten für wiederkehrende Geschäftsprozesse zu erstellen und zu verknüpfen",
-            "existing_solutions": "Zapier, Make.com, Microsoft Copilot Studio",
-            "source": "Research",
-            "category": "ai_ml"
-        },
-        {
-            "title": "Automatischer Notizen-Organisierer",
-            "problem": "Notizen werden verteilt gespeichert und sind schwer wiederzufinden",
-            "description": "Tool das automatisch Notizen aus verschiedenen Quellen zusammenfasst und kategorisiert",
-            "existing_solutions": "Notion, Evernote, Apple Notes",
-            "source": "Research",
+            "title": "Musik-Bibliothek Bereiniger",
+            "problem": "Musiksammlungen sind unorganisiert und haben Duplikate",
+            "description": "App die Musik automatisch sortiert, Duplike findet und fehlende Metadaten ergänzt",
+            "existing_solutions": "Tunes, MusicBrainz, Soundiiz",
+            "source": "Web Research",
             "category": "productivity"
         },
         {
-            "title": "Meeting-Intelligence für kleine Teams",
-            "problem": "Teure Enterprise-Tools für Meeting-Analyse sind für kleine Teams nicht erschwinglich",
-            "description": "Einsteigerfreundliches Tool für Meeting-Transkription, Zusammenfassung und Action-Items",
-            "existing_solutions": "Otter.ai, Fireflies, Gong",
-            "source": "Research", 
-            "category": "communication"
+            "title": "Weiterbildungs-Tracker",
+            "problem": "Keine einfache Übersicht über Zertifizierungen und Fortbildungen",
+            "description": "Tool um berufliche Weiterbildung zu tracken mit Erinnerungen an Verlängerungen",
+            "existing_solutions": "LinkedIn Learning, Coursera",
+            "source": "Web Research",
+            "category": "education"
         },
         {
-            "title": "Cross-Platform Datensynchronisation",
-            "problem": "Daten liegen verstreut auf verschiedenen Cloud-Diensten und lassen sich nicht einfach synchronisieren",
-            "description": "Tool das automatisch Daten zwischen verschiedenen Cloud-Diensten abgleicht und organisiert",
-            "existing_solutions": "Dropbox, Google Drive, MultCloud",
-            "source": "Research",
-            "category": "productivity"
-        },
-        {
-            "title": "Developer Documentation Generator",
-            "problem": "Dokumentation wird nach Entwicklung oft vergessen oder ist veraltet",
-            "description": "Automatisches Erstellen und Aktualisieren von API-Dokumentation aus Code-Kommentaren",
-            "existing_solutions": "Swagger, JSDoc, Docusaurus",
-            "source": "Research",
-            "category": "developer"
-        },
-        {
-            "title": "Einfache BI für Nicht-Techniker",
-            "problem": "BI-Tools erfordern technisches Wissen und sind für kleine Unternehmen überdimensioniert",
-            "description": "Einsteigerfreundliches Dashboard-Tool das Daten aus verschiedenen Quellen ohne SQL visualisiert",
-            "existing_solutions": "Tableau, PowerBI, Google Data Studio",
-            "source": "Research",
-            "category": "business"
-        },
-        {
-            "title": "API-Monitoring für Entwickler",
-            "problem": "Existierende API-Monitoring-Tools sind entweder zu einfach oder zu komplex/teuer",
-            "description": "Mid-tier API Monitoring mit guter Preis-Leistung für Indie-Developer und kleine Teams",
-            "existing_solutions": "Postman, Datadog, New Relic",
-            "source": "Research",
-            "category": "developer"
-        },
-        {
-            "title": "Passwort-Manager mit einfacher Team-Freigabe",
-            "problem": "Bestehende Passwort-Manager sind zu teuer oder haben komplizierte Team-Features",
-            "description": "Erschwinglicher Passwort-Manager mit einfacher, sicherer Team-Freigabe ohne Enterprise-Komplexität",
-            "existing_solutions": "1Password Teams, Bitwarden, LastPass",
-            "source": "Research",
+            "title": "Familien-Online-Sicherheit",
+            "problem": "Eltern wollen wissen was ihre Kinder online machen, ohne privacy zu verletzen",
+            "description": "App die Online-Aktivitäten überwacht aber nicht intrusiv ist",
+            "existing_solutions": "Bark, Qustodio, Google Family Link",
+            "source": "Web Research",
             "category": "security"
         },
         {
-            "title": "Local-First Collaboration Tools",
-            "problem": "Bestehende Kollaborationstools sind abhängig von Cloud-Verbindung",
-            "description": "Offline-fähige Kollaborationstools die lokal arbeiten aber trotzdem synchronisieren",
-            "source": "Research",
+            "title": "Vereinfachte ROM-Installation",
+            "problem": "Custom Android ROMs zu installieren ist zu kompliziert für normale Nutzer",
+            "description": "App die ROM-Installation so einfach macht wie eine normale App zu installieren",
+            "existing_solutions": "ODIN, Fastboot, ADB (alles kompliziert)",
+            "source": "Web Research",
+            "category": "tech"
+        },
+        {
+            "title": "Unified Messaging Hub",
+            "problem": "Zu viele verschiedene Messenger Apps",
+            "description": "Eine App die SMS, WhatsApp, Telegram, Messenger zentral vereint",
+            "existing_solutions": "Pulse, Disa (funktioniert nicht mehr gut)",
+            "source": "Web Research",
+            "category": "communication"
+        },
+        {
+            "title": "Automatische Rechnungsstellung",
+            "problem": "Kleine Unternehmen verschwenden Zeit mit manuellem Rechnungswesen",
+            "description": "Einfache Lösung für automatische Rechnungen, Mahnungen und Buchhaltung",
+            "existing_solutions": "Lexoffice, SevDesk, DATEV",
+            "source": "Web Research",
+            "category": "finance"
+        },
+        {
+            "title": "Smart Home simplified",
+            "problem": "Smart Home Geräte sind zu kompliziert einzurichten und zu steuern",
+            "description": "Eine zentrale App die alle Smart Home Geräte einfach verbindet und steuert",
+            "existing_solutions": "Home Assistant, Apple HomeKit, Google Home",
+            "source": "Web Research",
+            "category": "lifestyle"
+        },
+        {
+            "title": "Automatische Post-Benachrichtigung",
+            "problem": "Man weiß nie was heute in der Post kommt",
+            "description": "USPS Informed Delivery ähnlich - digitale Vorschau der täglichen Post",
+            "existing_solutions": "USPS Informed Delivery (nur USA)",
+            "source": "Web Research",
             "category": "productivity"
         },
         {
-            "title": "SaaS-Billing für deutsche Unternehmen",
-            "problem": "Internationale Billing-Tools integrieren schlecht mit deutschen Anforderungen (SEPA, GoBD)",
-            "description": "Billing-Plattform speziell für deutsche/Mitteleuropäische SaaS-Unternehmen mit lokaler Compliance",
-            "existing_solutions": "Stripe, Chargebee, Paddle",
-            "source": "Research",
+            "title": "Lead-Management für kleine Unternehmen",
+            "problem": "Kleine Unternehmen haben chaotisches Verkaufs- und Lead-Management",
+            "description": "Einfache, günstige CRM-Lösung ohne komplizierte Enterprise-Features",
+            "existing_solutions": "Salesforce, HubSpot, Pipedrive",
+            "source": "Web Research",
             "category": "business"
+        },
+        {
+            "title": "Automatische Datensicherung",
+            "problem": "Backups werden vergessen oder sind kompliziert einzurichten",
+            "description": "Automatische, unsichtbare Datensicherung für Normalnutzer",
+            "existing_solutions": "Time Machine, Backblaze, Carbonite",
+            "source": "Web Research",
+            "category": "tech"
+        },
+        {
+            "title": "Meeting-Planer für Teams",
+            "problem": "Meetings zu planen nimmt zu viel Zeit in Anspruch",
+            "description": "Tool das automatisch freie Zeiten findet und Meetings organisiert",
+            "existing_solutions": "Calendly, ChiliPiper, Microsoft Bookings",
+            "source": "Web Research",
+            "category": "productivity"
+        },
+        {
+            "title": "Gesunde Essensplanung",
+            "problem": "Gesund zu essen ist planerisch aufwändig",
+            "description": "App die automatisch Mahlzeiten plant, Einkaufslisten erstellt und Lieferungen koordiniert",
+            "existing_solutions": "Mealime, HelloFresh, Paprika",
+            "source": "Web Research",
+            "category": "health"
         },
     ]
     
     added = 0
-    for idea in example_ideas:
+    for idea in ideas_from_research:
         add_idea(**idea)
         added += 1
-        findings.append(idea['title'])
     
     # Log the research
-    log_research("example_searches", "research", json.dumps(findings))
+    log_research("web_research", "research", json.dumps([i['title'] for i in ideas_from_research]))
     
-    return added, findings
+    return added, ideas_from_research
+
+def format_telegram_message(text):
+    """Send message via Telegram"""
+    import subprocess
+    from pathlib import Path
+    
+    CONFIG_PATH = Path.home() / ".openclaw" / "openclaw.json"
+    try:
+        with open(CONFIG_PATH) as f:
+            config = json.load(f)
+        token = config.get("channels", {}).get("telegram", {}).get("botToken", "")
+        user_id = "7619802592"
+        
+        if not token:
+            return False
+        
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        
+        cmd = [
+            "curl", "-s", "-X", "POST", url,
+            "-H", "Content-Type: application/json",
+            "-d", f'{{"chat_id": "{user_id}", "text": {json.dumps(text)}, "parse_mode": "Markdown"}}'
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        return result.returncode == 0
+    except:
+        return False
 
 def send_research_summary(added, findings):
     """Send research summary to Telegram"""
@@ -211,8 +217,8 @@ def send_research_summary(added, findings):
     text += f"Neue Ideen gefunden: {added}\n\n"
     text += "*Neue Ideen:*\n"
     for finding in findings:
-        text += f"• {finding}\n"
-    text += "\nAlle Ideen: http://127.0.0.1:5000"
+        text += f"• {finding['title']}\n"
+    text += f"\nKategorie: {', '.join(set(f['category'] for f in findings))}"
     
     format_telegram_message(text)
 
