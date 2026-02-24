@@ -277,6 +277,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_redirect('/')
 
 if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
     init_db()
-    print("Idea Tracker: http://127.0.0.1:5000")
-    http.server.HTTPServer(("", 5000), Handler).serve_forever()
+    print(f"Idea Tracker: http://0.0.0.0:{port}")
+    http.server.HTTPServer(("", port), Handler).serve_forever()
