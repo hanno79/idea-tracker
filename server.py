@@ -189,10 +189,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_redirect('/')
             return
         
-        # Check auth for all other routes - TEMPORARILY DISABLED FOR RAILWAY
-        # if not self.check_auth():
-        #     self.send_login_page()
-        #     return
+        # Check auth for all other routes
+        if not self.check_auth():
+            self.send_login_page()
+            return
         
         # Handle status update URLs like /status/123/new
         if path.startswith('/status/'):
